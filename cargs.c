@@ -31,6 +31,33 @@ static void carg_parse_pos(carg_parser* parser, const char* arg) {
 	}
 }
 
+// Helper function to parse a collection of flags.
+static void carg_parse_flags(carg_parser* parser, const char* arg) {
+	// Process each flag character.
+	const char* flag_ptr;
+	for (flag_ptr = arg + 1; *flag_ptr; flag_ptr++) {
+		char flag = *flag_ptr;
+		// Iterate through cargs, looking for matching flags
+		carg* ca;
+		for (ca = parser->cargs; ca->type != CARG_END; ca++) {
+			if (ca->type != CARG_UNARY) continue; // Only unary arguments have flags
+			if (ca->flag == flag) {
+				if (ca->value) *(ca->value) = arg;
+				if (ca->handler) ca->handler(ca);
+				break;
+			}
+		}
+		if (ca->type == CARG_END) {
+			parser->nerrors++;
+			if (parser->error_handler) {
+				parser->error_handler(CARG_ERROR_INVALID_FLAG, arg, flag_ptr);
+			}
+			// Don't bother parsing the rest of the flags
+			break;
+		}
+	}
+}
+
 void carg_parse(carg_parser* parser, int argc, const char* argv[]) {
 	parser->nerrors = 0;
 	parser->last_pos = NULL;
@@ -81,28 +108,7 @@ void carg_parse(carg_parser* parser, int argc, const char* argv[]) {
 					}
 				} else {
 					// The argument appears to be a collection of flags. E.g., "-abcdef".
-					// Process each flag.
-					const char* flag_ptr;
-					for (flag_ptr = arg + 1; *flag_ptr; flag_ptr++) {
-						char flag = *flag_ptr;
-						// Iterate through cargs, looking for matching flags
-						for (ca = parser->cargs; ca->type != CARG_END; ca++) {
-							if (ca->type != CARG_UNARY) continue; // Only unary arguments have flags
-							if (ca->flag == flag) {
-								if (ca->value) *(ca->value) = arg;
-								if (ca->handler) ca->handler(ca);
-								break;
-							}
-						}
-						if (ca->type == CARG_END) {
-							parser->nerrors++;
-							if (parser->error_handler) {
-								parser->error_handler(CARG_ERROR_INVALID_FLAG, arg, flag_ptr);
-							}
-							// Don't bother parsing the rest of the flags
-							break;
-						}
-					}
+					carg_parse_flags(parser, arg);
 				}
 			} else {
 				// Argument must be a positional argument
