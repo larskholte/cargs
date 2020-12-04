@@ -143,7 +143,7 @@ void carg_print_descs(FILE* out, const carg* cargs) {
 
 void carg_print_error(carg_error err, const char* p1, const char* p2) {
 	if (err == CARG_ERROR_INVALID_ARGUMENT) {
-		fprintf(stderr, "error: invalid argument: \"%s\"\n", p1);
+		fprintf(stderr, "error: invalid argument \"%s\"\n", p1);
 	}
 	else if (err == CARG_ERROR_INVALID_FLAG) {
 		fprintf(stderr, "error: invalid flag '%c' in argument \"%s\"\n", *p2, p1);
